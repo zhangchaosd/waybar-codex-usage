@@ -1,14 +1,14 @@
 # Waybar Codex Weekly Usage
 
-A small Waybar custom module for Linux that displays the weekly Codex quota of the ChatGPT account currently logged in through the local `codex` CLI.
+A small Waybar module for Linux that displays the weekly Codex quota remaining for the ChatGPT account currently logged in through the local `codex` CLI.
 
 Example block:
 
 ```text
-󰚩 W 37%
+96% [Codex icon]
 ```
 
-The percentage is usage consumed, not quota remaining. The tooltip shows the current plan and the local reset time. The block becomes orange at 80% and red at 95%.
+The percentage is quota remaining. A processed monochrome version of the icon served by the official OpenAI Codex documentation page appears to its right, matching the text-and-icon layout of Waybar's built-in modules. The tooltip shows both remaining and consumed quota, the current plan, and the local reset time.
 
 ## Why it uses `codex app-server`
 
@@ -35,7 +35,7 @@ On success it:
 
 1. Installs the module script under `~/.local/share/waybar-codex-usage/`.
 2. Creates `~/.config/waybar/config.jsonc` and `style.css` from Fedora's defaults only when they do not exist.
-3. Adds `custom/codex-usage` to the right side of Waybar and adds its CSS once (idempotently).
+3. Adds a horizontal `group/codex-usage` containing the percentage and a 14px official Codex/OpenAI icon, then installs its CSS (idempotently).
 4. Reloads an already-running Waybar with `SIGUSR2`.
 
 The user-level Waybar files are used deliberately so package updates do not overwrite the customization.
@@ -54,6 +54,18 @@ The last successful quota response is cached under
 temporarily unavailable, Waybar keeps displaying that cached value and notes
 the refresh failure in the tooltip instead of hiding the module.
 
+## Official icon
+
+The source favicon comes from `https://developers.openai.com/codex/`. The
+reproducible processing script extracts the white knot from its blue circle,
+creates an antialiased transparent mask, and emits the 16×16 Waybar asset:
+
+```bash
+./scripts/build_icon.sh
+```
+
+See `assets/README.md` for provenance and trademark information.
+
 ## Test
 
 ```bash
@@ -62,7 +74,7 @@ python3 -m unittest discover -s tests -v
 
 ## Uninstall
 
-Remove the `custom/codex-usage` entry and module definition from `~/.config/waybar/config.jsonc`, remove the CSS block delimited by `waybar-codex-usage:start/end` in `~/.config/waybar/style.css`, then run:
+Remove the `group/codex-usage`, `custom/codex-usage`, and `image#codex-icon` entries/definitions from `~/.config/waybar/config.jsonc`, remove the CSS block delimited by `waybar-codex-usage:start/end` in `~/.config/waybar/style.css`, then run:
 
 ```bash
 rm -rf ~/.local/share/waybar-codex-usage

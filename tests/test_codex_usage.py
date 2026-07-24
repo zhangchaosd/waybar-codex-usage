@@ -24,9 +24,10 @@ class CodexUsageTests(unittest.TestCase):
 
         payload = codex_usage.make_waybar_payload(result, now=1785000000)
 
-        self.assertEqual(payload["text"], "󰚩 W 37%")
+        self.assertEqual(payload["text"], "63%")
         self.assertEqual(payload["class"], "normal")
-        self.assertIn("Weekly usage: 37%", payload["tooltip"])
+        self.assertIn("Weekly remaining: 63%", payload["tooltip"])
+        self.assertIn("Weekly used: 37%", payload["tooltip"])
         self.assertIn("Plan: pro", payload["tooltip"])
 
     def test_high_weekly_usage_is_warning(self):
@@ -50,7 +51,7 @@ class CodexUsageTests(unittest.TestCase):
             codex_usage.make_waybar_payload(result, now=0)
 
     def test_successful_payload_round_trips_through_cache(self):
-        payload = {"text": "W 4%", "tooltip": "Weekly usage: 4%", "class": "normal"}
+        payload = {"text": "96%", "tooltip": "Weekly remaining: 96%", "class": "normal"}
         with tempfile.TemporaryDirectory() as directory:
             cache = Path(directory) / "payload.json"
             codex_usage.save_cached_payload(payload, cache)

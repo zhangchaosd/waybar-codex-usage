@@ -98,7 +98,8 @@ def make_waybar_payload(result: dict[str, Any], now: int | None = None) -> dict[
     if duration != WEEK_MINUTES:
         raise ValueError(f"Codex did not return a weekly limit (got {duration!r} minutes)")
 
-    used = int(primary["usedPercent"])
+    used = max(0, min(100, int(primary["usedPercent"])))
+    remaining = 100 - used
     if used >= CRITICAL_PERCENT:
         css_class = "critical"
     elif used >= WARNING_PERCENT:
@@ -106,7 +107,7 @@ def make_waybar_payload(result: dict[str, Any], now: int | None = None) -> dict[
     else:
         css_class = "normal"
 
-    tooltip_lines = [f"Weekly usage: {used}%"]
+    tooltip_lines = [f"Weekly remaining: {remaining}%", f"Weekly used: {used}%"]
     plan = limits.get("planType")
     if plan:
         tooltip_lines.append(f"Plan: {plan}")
@@ -115,7 +116,7 @@ def make_waybar_payload(result: dict[str, Any], now: int | None = None) -> dict[
         reset_time = dt.datetime.fromtimestamp(int(resets_at), tz=dt.timezone.utc).astimezone()
         tooltip_lines.append(f"Resets: {reset_time:%Y-%m-%d %H:%M %Z}")
 
-    return {"text": f"󰚩 W {used}%", "tooltip": "\n".join(tooltip_lines), "class": css_class}
+    return {"text": f"{remaining}%", "tooltip": "\n".join(tooltip_lines), "class": css_class}
 
 
 def main() -> int:
