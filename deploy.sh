@@ -47,6 +47,7 @@ if '"custom/codex-usage"' not in text:
         raise SystemExit('Could not find "modules-right" in Waybar config; no files changed.')
     text = text[:modules.end()] + '\n        "custom/codex-usage",' + text[modules.end():]
     module = f'''\n    "custom/codex-usage": {{
+        "format": "{{text}}",
         "exec": "{script}",
         "return-type": "json",
         "interval": 60,
@@ -56,9 +57,15 @@ if '"custom/codex-usage"' not in text:
     if closing < 0:
         raise SystemExit('Could not find the end of Waybar config; no files changed.')
     text = text[:closing].rstrip() + ',\n' + module + text[closing:]
-    temporary = path.with_suffix(path.suffix + '.tmp')
-    temporary.write_text(text)
-    temporary.replace(path)
+else:
+    # Older installations may predate the explicit format required by some
+    # Waybar versions. Add it without duplicating the module.
+    definition = re.search(r'("custom/codex-usage"\s*:\s*\{\s*)', text)
+    if definition and '"format"' not in text[definition.end():text.find('}', definition.end())]:
+        text = text[:definition.end()] + '"format": "{text}",\n        ' + text[definition.end():]
+temporary = path.with_suffix(path.suffix + '.tmp')
+temporary.write_text(text)
+temporary.replace(path)
 PY
 
 if ! grep -q 'waybar-codex-usage:start' "$STYLE"; then
