@@ -8,6 +8,8 @@ never reads or prints the OAuth credentials in ~/.codex/auth.json.
 import argparse
 import datetime as dt
 import json
+import os
+import pathlib
 import select
 import subprocess
 import sys
@@ -17,9 +19,30 @@ from typing import Any
 WEEK_MINUTES = 7 * 24 * 60
 WARNING_PERCENT = 80
 CRITICAL_PERCENT = 95
+CACHE_DIR = pathlib.Path(os.environ.get("XDG_CACHE_HOME", pathlib.Path.home() / ".cache")) / "waybar-codex-usage"
+CACHE_PATH = CACHE_DIR / "payload.json"
 
 
-def read_rate_limits(timeout: float = 20.0) -> dict[str, Any]:
+def save_cached_payload(payload: dict[str, str], path: pathlib.Path = CACHE_PATH) -> None:
+    """Atomically cache the last successful payload."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False) + "\n")
+    temporary.replace(path)
+
+
+def load_cached_payload(path: pathlib.Path = CACHE_PATH) -> dict[str, str] | None:
+    """Load a previously successful payload, ignoring a missing/broken cache."""
+    try:
+        payload = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict) or not isinstance(payload.get("text"), str):
+        return None
+    return payload
+
+
+def read_rate_limits(timeout: float = 8.0) -> dict[str, Any]:
     """Read the authenticated account rate limits through Codex app-server."""
     process = subprocess.Popen(
         ["codex", "app-server", "--stdio"],
@@ -104,9 +127,17 @@ def main() -> int:
     except (FileNotFoundError, OSError, RuntimeError, TimeoutError, ValueError, KeyError, json.JSONDecodeError) as exc:
         if args.check:
             print(f"Codex status check failed: {exc}", file=sys.stderr)
+            return 1
+        payload = load_cached_payload()
+        if payload is None:
+            payload = {"text": "󰚩 unavailable", "tooltip": str(exc), "class": "critical"}
         else:
-            print(json.dumps({"text": "󰚩 unavailable", "tooltip": str(exc), "class": "critical"}))
-        return 1
+            previous_tooltip = payload.get("tooltip", "")
+            payload["tooltip"] = f"{previous_tooltip}\nLast refresh failed: {exc}".strip()
+        print(json.dumps(payload, ensure_ascii=False))
+        return 0
+
+    save_cached_payload(payload)
 
     if args.check:
         print(payload["tooltip"].replace("\n", " | "))

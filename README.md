@@ -49,6 +49,11 @@ python3 scripts/codex_usage.py
 
 The first prints a human-readable result; the second emits Waybar JSON.
 
+The last successful quota response is cached under
+`~/.cache/waybar-codex-usage/payload.json`. If the Codex usage endpoint is
+temporarily unavailable, Waybar keeps displaying that cached value and notes
+the refresh failure in the tooltip instead of hiding the module.
+
 ## Test
 
 ```bash

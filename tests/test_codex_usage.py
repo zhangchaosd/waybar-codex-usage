@@ -1,4 +1,5 @@
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -47,6 +48,19 @@ class CodexUsageTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "weekly"):
             codex_usage.make_waybar_payload(result, now=0)
+
+    def test_successful_payload_round_trips_through_cache(self):
+        payload = {"text": "W 4%", "tooltip": "Weekly usage: 4%", "class": "normal"}
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / "payload.json"
+            codex_usage.save_cached_payload(payload, cache)
+            self.assertEqual(codex_usage.load_cached_payload(cache), payload)
+
+    def test_broken_cache_is_ignored(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / "payload.json"
+            cache.write_text("not json")
+            self.assertIsNone(codex_usage.load_cached_payload(cache))
 
 
 if __name__ == "__main__":

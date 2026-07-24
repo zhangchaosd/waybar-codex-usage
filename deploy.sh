@@ -47,7 +47,7 @@ if '"custom/codex-usage"' not in text:
         raise SystemExit('Could not find "modules-right" in Waybar config; no files changed.')
     text = text[:modules.end()] + '\n        "custom/codex-usage",' + text[modules.end():]
     module = f'''\n    "custom/codex-usage": {{
-        "format": "{text}",
+        "format": "{{text}}",
         "exec": "{script}",
         "return-type": "json",
         "interval": 60,
